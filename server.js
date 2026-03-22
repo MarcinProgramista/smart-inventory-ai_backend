@@ -1,11 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { corsOptions } from "./config/corsOptions";
 
 dotenv.config();
 const app = express();
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Test route
@@ -18,5 +19,23 @@ app.post("/echo", (req, res) => {
     received: req.body,
   });
 });
+
+// Full health status
+app.get("/health", async (req, res) => {
+  try {
+    const result = await db.query("SELECT NOW()");
+    res.json({
+      status: "healthy",
+      db: "connected",
+      time: result.rows[0].now,
+    });
+  } catch (err) {
+    res.status(503).json({
+      status: "unhealthy",
+      db: "disconnected",
+    });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
