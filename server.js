@@ -10,8 +10,13 @@ app.use(express.json());
 
 // Test route
 app.get("/", (req, res) => {
-  res.send("SmartInventoryAI API is running...");
+  res.send("Smart InventoryAI API is running...");
 });
 
-const PORT = process.env.PORT || 4000;
+app.post("/echo", (req, res) => {
+  res.json({
+    received: req.body,
+  });
+});
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
