@@ -3,13 +3,13 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { corsOptions } from "./config/corsOptions.js";
 import db from "./db.js";
-
+import { logger } from "./middleware/logger.js";
 dotenv.config();
 const app = express();
 
 app.use(cors(corsOptions));
 app.use(express.json());
-
+app.use(logger);
 // Test route
 app.get("/", (req, res) => {
   res.send("Smart InventoryAI API is running...");
