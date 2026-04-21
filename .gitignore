@@ -203,3 +203,5 @@ Thumbs.db
 mini_postman_cookies.json.ssh/
 *.pem
 *id_ed25519*
+
+requests/

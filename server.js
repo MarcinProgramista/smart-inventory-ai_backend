@@ -41,6 +41,12 @@ app.get("/health", async (req, res) => {
   }
 });
 
+if (process.env.NODE_ENV !== "production") {
+  app.get("/error", (req, res) => {
+    throw new Error("Test error handler");
+  });
+}
+console.log("ENV:", process.env.NODE_ENV);
 app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
