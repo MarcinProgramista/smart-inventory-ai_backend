@@ -3,7 +3,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { corsOptions } from "./config/corsOptions.js";
 import db from "./db.js";
+
+import { errorHandler } from "./middleware/errorHandler.js";
 import { logger } from "./middleware/logger.js";
+
 dotenv.config();
 const app = express();
 
@@ -38,5 +41,6 @@ app.get("/health", async (req, res) => {
   }
 });
 
+app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
