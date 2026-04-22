@@ -12,7 +12,12 @@ const __dirname = path.dirname(__filename);
 export const logEvents = async (message, logName) => {
   const dateTime = format(new Date(), "yyyy-MM-dd\tHH:mm:ss");
   const logId = uuid();
-  const logItem = `${dateTime}\t${logId}\t${message}\n`;
+  const logItem =
+    JSON.stringify({
+      time: dateTime,
+      id: logId,
+      ...JSON.parse(message),
+    }) + "\n";
 
   try {
     const logsDir = path.join(__dirname, "..", "logs");
@@ -33,10 +38,18 @@ export const logger = (req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
+    const logData = {
+      time: new Date().toISOString(),
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+      origin: origin,
+    };
 
-    const message = `${req.method}\t${origin}\t${req.url}\t${res.statusCode}\t${duration}ms`;
+    const message = JSON.stringify(logData);
 
-    logEvents(message, "reqLog.txt");
+    logEvents(message, "reqLog.json");
 
     console.log(
       `\x1b[36m[${req.method}]\x1b[0m ` +
