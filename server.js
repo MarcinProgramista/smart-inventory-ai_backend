@@ -7,7 +7,8 @@ import db from "./db.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { logger } from "./middleware/logger.js";
 import { normalizeSupplierPayload } from "./utils/validators/normalizeSupplierDefault.js";
-
+import { validateSupplierDefalult } from "./utils/validators/validateSupplierDefault.js";
+import suppliersDefault from "./routes/suppliersDefaultRoute.js";
 dotenv.config();
 const app = express();
 
@@ -26,6 +27,16 @@ app.post("/test-normalize", (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+app.post("/test-validate", (req, res) => {
+  const errors = validateSupplierDefalult(req.body);
+
+  if (errors.length) {
+    return res.status(400).json({ errors });
+  }
+
+  res.json({ message: "OK" });
 });
 
 app.post("/echo", (req, res) => {
@@ -50,6 +61,8 @@ app.get("/health", async (req, res) => {
     });
   }
 });
+
+app.use("/api/suppliers-default", suppliersDefault);
 
 if (process.env.NODE_ENV !== "production") {
   app.get("/error", (req, res) => {

@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-
+console.log("START");
 const OUTPUT = "project_dump.txt";
 const IGNORE = ["node_modules", ".git", ".env"];
 

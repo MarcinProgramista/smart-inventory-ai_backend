@@ -3,9 +3,6 @@ export function validateSupplierDefalult(data) {
 
   const { name, street, postal_code, city, country } = data;
 
-  if (!isUpdate && !user_id) {
-    errors.push("user_id is required");
-  }
   if (!name || name.length < 2) {
     errors.push("Supplier name must have at least 2 characters");
   }
