@@ -7,7 +7,7 @@ import db from "./db.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { logger } from "./middleware/logger.js";
 import { normalizeSupplierPayload } from "./utils/validators/normalizeSupplierDefault.js";
-import { validateSupplierDefalult } from "./utils/validators/validateSupplierDefault.js";
+import { validateSupplierDefault } from "./utils/validators/validateSupplierDefault.js";
 import suppliersDefault from "./routes/suppliersDefaultRoute.js";
 dotenv.config();
 const app = express();
@@ -30,7 +30,7 @@ app.post("/test-normalize", (req, res) => {
 });
 
 app.post("/test-validate", (req, res) => {
-  const errors = validateSupplierDefalult(req.body);
+  const errors = validateSupplierDefault(req.body);
 
   if (errors.length) {
     return res.status(400).json({ errors });
