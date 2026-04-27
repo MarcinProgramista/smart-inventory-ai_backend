@@ -22,12 +22,11 @@ export const getSuppliersDefault = async (req, res) => {
 ================*/
 export const addSupplierDefault = async (req, res) => {
   try {
-    const payload = normalizeSupplierPayload(req.body);
-    const errors = validateSupplierDefault(payload);
-
+    const errors = validateSupplierDefault(req.body);
     if (errors.length > 0) {
       return res.status(400).json({ errors });
     }
+    const payload = normalizeSupplierPayload(req.body);
 
     const { name, street, contact, email, phone, postal_code, city, country } =
       payload;
@@ -48,7 +47,7 @@ export const addSupplierDefault = async (req, res) => {
     console.log("addSupplierDefault error:", error);
 
     if (error.code === "23505") {
-      return res.status(409).json({ error: "Supplier name already exists " });
+      return res.status(409).json({ error: "Supplier name already exists" });
     }
 
     return res.status(500).json({ error: error.message });

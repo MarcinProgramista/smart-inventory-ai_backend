@@ -7,8 +7,10 @@ export function validateSupplierDefault(data) {
   if (!name || name.length < 2) {
     errors.push("Supplier name must have at least 2 characters");
   }
-  if (!phone) {
+  if (!data.phone) {
     errors.push("Phone is required");
+  } else if (!/^\d{9}$/.test(data.phone.replace(/\D/g, ""))) {
+    errors.push("Phone must be 9 digits (e.g. 111222333)");
   }
   if (!email) {
     errors.push("Email is required");
