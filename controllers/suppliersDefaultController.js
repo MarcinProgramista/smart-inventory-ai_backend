@@ -109,3 +109,30 @@ export const updateSupplierDefault = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * DELETE SUPPLIER DEFAULT
+ */
+export const deleteSupplierDefault = async (req, res) => {
+  const idNum = Number(req.params.id);
+
+  if (!Number.isInteger(idNum) || idNum <= 0) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+
+  try {
+    const result = await db.query(
+      "DELETE FROM suppliers_default WHERE id = $1 RETURNING *",
+      [idNum],
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Supplier not found" });
+    }
+
+    return res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("deleteSupplierDefault error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
