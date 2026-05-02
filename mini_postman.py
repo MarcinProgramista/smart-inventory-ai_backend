@@ -91,7 +91,7 @@ def send_request_from_file(request_file):
 
     # Print JSON or text
     try:
-        print(json.dumps(response.json(), indent=4))
+       print(json.dumps(response.json(), indent=4, ensure_ascii=False))
     except:
         print(response.text)
 
