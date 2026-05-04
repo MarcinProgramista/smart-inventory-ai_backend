@@ -1,7 +1,9 @@
 import { db } from "../db.js";
+import { validateCategoryDefault } from "../utils/validators/validateCategoryDefault.js";
+import { normalizeCategoryPayload } from "../utils/validators/normalizeCategoryDefault.js";
 
 /* =============
-    Ger all categories
+   Get all categories
 ================*/
 export const getCategoriesDefault = async (req, res) => {
   try {
@@ -10,7 +12,46 @@ export const getCategoriesDefault = async (req, res) => {
     );
     res.json(result.rows);
   } catch (error) {
-    console.log("getSuppliers error:", error);
+    console.error("getCategoriesDefault error:", error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+/* =============
+    Add category
+================*/
+export const addCategoryDefault = async (req, res) => {
+  try {
+    const errors = validateCategoryDefault(req.body);
+    if (errors.length > 0) {
+      return res.status(400).json({ errors });
+    }
+
+    const payload = normalizeCategoryPayload(req.body);
+
+    const { name } = payload;
+
+    if (!name) {
+      return res.status(400).json({ error: "Category name is required" });
+    }
+
+    const result = await db.query(
+      `
+      INSERT INTO categories_default (name)
+      VALUES ($1)
+      RETURNING *
+      `,
+      [name],
+    );
+
+    return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("addCategoryDefault error:", error);
+
+    if (error.code === "23505") {
+      return res.status(409).json({ error: "Category name already exists" });
+    }
+
+    return res.status(500).json({ error: error.message });
   }
 };
