@@ -3,7 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { corsOptions } from "./config/corsOptions.js";
 import db from "./db.js";
-
 import { errorHandler } from "./middleware/errorHandler.js";
 import { logger } from "./middleware/logger.js";
 import { normalizeSupplierPayload } from "./utils/validators/normalizeSupplierDefault.js";
@@ -11,6 +10,7 @@ import { validateSupplierDefault } from "./utils/validators/validateSupplierDefa
 import suppliersDefault from "./routes/suppliersDefaultRoute.js";
 import categoriesDefault from "./routes/categoriesDefaultRoute.js";
 import registerRoute from "./routes/registerRoute.js";
+
 dotenv.config();
 const app = express();
 
