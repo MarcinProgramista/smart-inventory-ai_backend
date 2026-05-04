@@ -9,6 +9,7 @@ import { logger } from "./middleware/logger.js";
 import { normalizeSupplierPayload } from "./utils/validators/normalizeSupplierDefault.js";
 import { validateSupplierDefault } from "./utils/validators/validateSupplierDefault.js";
 import suppliersDefault from "./routes/suppliersDefaultRoute.js";
+import categoriesDefault from "./routes/categoriesDefaultRoute.js";
 dotenv.config();
 const app = express();
 
@@ -63,6 +64,7 @@ app.get("/health", async (req, res) => {
 });
 
 app.use("/api/suppliers-default", suppliersDefault);
+app.use("/api/categories-default", categoriesDefault);
 
 if (process.env.NODE_ENV !== "production") {
   app.get("/error", (req, res) => {
