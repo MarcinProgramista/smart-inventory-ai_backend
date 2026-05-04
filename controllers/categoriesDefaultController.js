@@ -107,3 +107,30 @@ export const updateCategoryDefault = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * DELETE CATEGORY DEFAULT
+ */
+export const deleteCategoryDefault = async (req, res) => {
+  const idNum = Number(req.params.id);
+
+  if (!Number.isInteger(idNum) || idNum <= 0) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+
+  try {
+    const result = await db.query(
+      "DELETE FROM categories_default WHERE id = $1 RETURNING *",
+      [idNum],
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    return res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("deleteCategoryDefault error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
