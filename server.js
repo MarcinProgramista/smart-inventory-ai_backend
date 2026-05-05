@@ -10,6 +10,7 @@ import { validateSupplierDefault } from "./utils/validators/validateSupplierDefa
 import suppliersDefault from "./routes/suppliersDefaultRoute.js";
 import categoriesDefault from "./routes/categoriesDefaultRoute.js";
 import registerRoute from "./routes/registerRoute.js";
+import usersRoute from "./routes/usersRoute.js";
 
 dotenv.config();
 const app = express();
@@ -65,6 +66,7 @@ app.get("/health", async (req, res) => {
 });
 
 app.use("/api/register", registerRoute);
+app.use("/api/users", usersRoute);
 
 app.use("/api/suppliers-default", suppliersDefault);
 app.use("/api/categories-default", categoriesDefault);
