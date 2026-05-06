@@ -1,6 +1,6 @@
 import { db } from "../db.js";
 import bcrypt from "bcrypt";
-import jwtTokens from "../utils/jwt-helpers.js";
+import { jwtTokens } from "../utils/jwt-helpers.js";
 import crypto from "crypto";
 
 const handleLogin = async (req, res) => {
