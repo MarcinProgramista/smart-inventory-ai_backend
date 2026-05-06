@@ -2,62 +2,79 @@ import { db } from "../db.js";
 import bcrypt from "bcrypt";
 import jwtTokens from "../utils/jwt-helpers.js";
 import crypto from "crypto";
-import jwt from "jsonwebtoken";
 
 const handleLogin = async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password)
-    return res.status(400).json({ message: "Email and password are required" });
+  // 🔍 Validation
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "Email and password are required",
+    });
+  }
+
   try {
-    //Pobieranie użytkownika
+    // 🔍 Find user
     const foundUser = await db.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
 
     if (foundUser.rows.length === 0) {
-      return res.status(401).json({ error: "Email is incorrect" });
+      return res.status(401).json({
+        error: "Email is incorrect",
+      });
     }
 
     const user = foundUser.rows[0];
-    // Sprawdzenie hasła
+
+    // 🔐 Check password
     const match = await bcrypt.compare(password, user.password);
+
     if (!match) {
-      return res.status(401).json({ error: "Incorrect password" });
+      return res.status(401).json({
+        error: "Incorrect password",
+      });
     }
-    // Generowanie tokenow
+
+    // 🎟 Generate tokens
     const tokens = jwtTokens({
       id: user.id,
       name: user.name,
       email: user.email,
     });
 
-    //Hashowanie refresh tokena
+    // 🔒 Hash refresh token
     const hashedRefreshToken = crypto
       .createHash("sha256")
-      .update(tokens.accessToken)
+      .update(tokens.refreshToken)
       .digest("hex");
-    // Zapis do bazy
+
+    // 💾 Save hashed refresh token to DB
     await db.query("UPDATE users SET token = $1 WHERE id = $2", [
       hashedRefreshToken,
       user.id,
     ]);
 
-    //Ustawienie cookie
+    // 🍪 Set cookie
     res.cookie("refresh_token", tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      someSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dni
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-    res.status(200).json({
+
+    // ✅ Response
+    return res.status(200).json({
       accessToken: tokens.accessToken,
       user_id: user.id,
       name: user.name,
     });
   } catch (error) {
     console.error("LOGIN ERROR:", error);
-    res.status(500).json({ error: "Login failed" });
+
+    return res.status(500).json({
+      error: "Login failed",
+    });
   }
 };
 
