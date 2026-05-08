@@ -83,3 +83,23 @@ export const updateCategory = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * delete category
+ */
+export const deleteCategory = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db.query(
+      "DELETE FROM categories WHERE id = $1 RETURNING *",
+      [id],
+    );
+    if (result.rowCount === 0)
+      return res.status(404).json({ error: "Category not found" });
+    res.json({ success: true, deleted: result.rows[0] });
+  } catch (error) {
+    console.error("deleteCategory error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
