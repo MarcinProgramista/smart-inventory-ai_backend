@@ -1,4 +1,6 @@
 import { db } from "../db.js";
+import { validateContact } from "../utils/validators/contactValidator.js";
+import { normalizeContactPayload } from "../utils/validators/normalizeContact.js";
 
 /**
  * get all contacts
@@ -18,5 +20,39 @@ export const getAllContacts = async (req, res) => {
   } catch (error) {
     console.error("getContacts error:", error);
     return res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * add contact
+ */
+export const addContact = async (req, res) => {
+  try {
+    const errors = validateContact(req.body);
+    if (errors.length > 0) {
+      return res.status(400).json({ errors });
+    }
+    const payload = normalizeContactPayload(req.body);
+
+    const { user_id, first_name, last_name, role, moblie_phone, email } =
+      payload;
+
+    const result = await db.query(
+      "INSERT INTO contacts (user_id, first_name, last_name, role, mobile_phone, email) VALUES ($1,$2,$3,$4,$5,$6)  RETURNING *",
+      [user_id, first_name, last_name, role, moblie_phone, email],
+    );
+    return res.status(201).json({
+      message: "Conctact created successfully",
+      contact: result.rows[0],
+    });
+  } catch (error) {
+    console.error("addContact error:", error);
+    //duplikaty email
+    if (error.code === "23505") {
+      return res
+        .status(409)
+        .json({ field: "email", message: "Email already exist" });
+    }
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
