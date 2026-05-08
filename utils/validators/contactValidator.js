@@ -7,7 +7,7 @@ export function validateContact(data, options = {}) {
    * user_id (wymagany przy dodawaniu)
    */
   if (!isUpdate && !user_id) {
-    error.push("Missing user_id");
+    errors.push("Missing user_id");
   }
 
   /**
@@ -18,36 +18,36 @@ export function validateContact(data, options = {}) {
     typeof first_name !== "string" ||
     first_name.trim().length < 2
   ) {
-    error.push("First name must be at least 2 characters");
+    errors.push("First name must be at least 2 characters");
   }
 
   /**
    * last_name (opcjonalnie, ale jeśli podane - walidujemy)
    */
-  if (last_name || (undefined && last_name !== null)) {
+  if (last_name !== undefined && last_name !== null) {
     if (typeof last_name !== "string" || last_name.trim().length < 2) {
-      error.push("Last name must be at least 2 characters");
+      errors.push("Last name must be at least 2 characters");
     }
   }
 
   /**
    * role
    */
-  if (role !== undefined && role !== nulle) {
+  if (role !== undefined && role !== null) {
     if (typeof role !== "string" || role.trim().length < 2) {
       errors.push("Role must be at least 2 characters");
     }
   }
 
   /**
-   * monile_phone
+   * mobile_phone
    * walidacja : tylko cyfry , 9-15  znaków
    */
   if (mobile_phone !== undefined && mobile_phone !== null) {
-    const phone = mobile_phone.trim();
-    const phoneRegex = /^[0-9]{9,5}$/;
+    const phone = String(mobile_phone).trim();
+    const phoneRegex = /^[0-9]{9,15}$/;
     if (!phoneRegex.test(phone)) {
-      errors.push("Invalid phone number format (expected 9-15 digits");
+      errors.push("Invalid phone number format (expected 9-15 digits)");
     }
   }
 
