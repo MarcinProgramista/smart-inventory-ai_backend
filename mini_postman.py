@@ -10,29 +10,38 @@ from pathlib import Path
 COOKIES_FILE = Path("mini_postman_cookies.json")
 TOKEN_FILE = Path("mini_postman_token.json")
 
-
 # =========================================
 # COOKIES
 # =========================================
 
 def load_cookies():
-    if COOKIES_FILE.exists():
-        try:
-            with open(COOKIES_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            return {}
 
-    return {}
+    if not COOKIES_FILE.exists():
+        return {}
+
+    try:
+        with open(COOKIES_FILE, "r") as f:
+            return json.load(f)
+
+    except Exception:
+        return {}
 
 
-def save_cookies(cookie_dict):
+def save_cookies(cookies):
+
     with open(COOKIES_FILE, "w") as f:
-        json.dump(cookie_dict, f, indent=4)
+        json.dump(cookies, f, indent=4)
 
 
-def cookies_to_header(cookie_dict):
-    return "; ".join(f"{k}={v}" for k, v in cookie_dict.items())
+def clear_cookies():
+
+    if COOKIES_FILE.exists():
+        COOKIES_FILE.unlink()
+
+
+def cookies_to_header(cookies):
+
+    return "; ".join(f"{k}={v}" for k, v in cookies.items())
 
 
 # =========================================
@@ -40,20 +49,22 @@ def cookies_to_header(cookie_dict):
 # =========================================
 
 def load_token():
-    if TOKEN_FILE.exists():
-        try:
-            with open(TOKEN_FILE, "r") as f:
-                data = json.load(f)
 
-                return data.get("accessToken")
+    if not TOKEN_FILE.exists():
+        return None
 
-        except Exception:
-            return None
+    try:
+        with open(TOKEN_FILE, "r") as f:
+            data = json.load(f)
 
-    return None
+            return data.get("accessToken")
+
+    except Exception:
+        return None
 
 
 def save_token(token):
+
     with open(TOKEN_FILE, "w") as f:
         json.dump(
             {
@@ -64,58 +75,19 @@ def save_token(token):
         )
 
 
+def clear_token():
+
+    if TOKEN_FILE.exists():
+        TOKEN_FILE.unlink()
+
+
 # =========================================
-# REQUEST LOGIC
+# DEBUG
 # =========================================
 
-def send_request_from_file(request_file):
+def print_request(method, url, headers, body):
 
-    print(f"📄 Loading request from: {request_file}")
-
-    # -------------------------------------
-    # READ JSON REQUEST FILE
-    # -------------------------------------
-
-    try:
-        with open(request_file, "r") as f:
-            req = json.load(f)
-
-    except Exception as e:
-        print(f"❌ Error reading JSON: {e}")
-        return
-
-    method = req.get("method", "GET").upper()
-    url = req.get("url")
-    headers = req.get("headers", {})
-    body = req.get("body")
-
-    if not url:
-        print("❌ URL missing in request file")
-        return
-
-    # -------------------------------------
-    # LOAD COOKIES
-    # -------------------------------------
-
-    cookies = load_cookies()
-
-    if cookies:
-        headers["Cookie"] = cookies_to_header(cookies)
-
-    # -------------------------------------
-    # LOAD ACCESS TOKEN
-    # -------------------------------------
-
-    access_token = load_token()
-
-    if access_token:
-        headers["Authorization"] = f"Bearer {access_token}"
-
-    # -------------------------------------
-    # DEBUG
-    # -------------------------------------
-
-    print(f"➡️ Sending {method} {url}")
+    print(f"\n➡️ Sending {method} {url}")
 
     if headers:
         print("\n📨 Headers:")
@@ -125,33 +97,14 @@ def send_request_from_file(request_file):
         print("\n📦 Body:")
         print(json.dumps(body, indent=4))
 
-    # -------------------------------------
-    # SEND REQUEST
-    # -------------------------------------
 
-    try:
-        response = requests.request(
-            method=method,
-            url=url,
-            headers=headers,
-            json=body if method in ["POST", "PUT", "PATCH"] else None
-        )
-
-    except Exception as e:
-        print(f"\n❌ Network error: {e}")
-        return
-
-    # -------------------------------------
-    # RESPONSE
-    # -------------------------------------
+def print_response(response, response_json):
 
     print(f"\n📌 Status: {response.status_code}")
 
     print("\n📥 Response:")
 
-    try:
-        response_json = response.json()
-
+    if response_json:
         print(
             json.dumps(
                 response_json,
@@ -159,15 +112,103 @@ def send_request_from_file(request_file):
                 ensure_ascii=False
             )
         )
-
-    except Exception:
+    else:
         print(response.text)
 
+
+# =========================================
+# MAIN REQUEST
+# =========================================
+
+def send_request_from_file(request_file):
+
+    print(f"📄 Loading request from: {request_file}")
+
+    # =====================================
+    # LOAD REQUEST FILE
+    # =====================================
+
+    try:
+        with open(request_file, "r") as f:
+            req = json.load(f)
+
+    except Exception as e:
+        print(f"\n❌ Failed to load request file: {e}")
+        return
+
+    method = req.get("method", "GET").upper()
+    url = req.get("url")
+    headers = req.get("headers", {})
+    body = req.get("body")
+
+    if not url:
+        print("\n❌ URL missing")
+        return
+
+    # =====================================
+    # LOAD COOKIES
+    # =====================================
+
+    cookies = load_cookies()
+
+    if cookies:
+        headers["Cookie"] = cookies_to_header(cookies)
+
+    # =====================================
+    # LOAD ACCESS TOKEN
+    # =====================================
+
+    access_token = load_token()
+
+    if access_token:
+        headers["Authorization"] = f"Bearer {access_token}"
+
+    # =====================================
+    # DEBUG REQUEST
+    # =====================================
+
+    print_request(method, url, headers, body)
+
+    # =====================================
+    # SEND REQUEST
+    # =====================================
+
+    try:
+        response = requests.request(
+            method=method,
+            url=url,
+            headers=headers,
+            json=body if method in ["POST", "PUT", "PATCH"] else None,
+            timeout=10
+        )
+
+    except requests.exceptions.Timeout:
+        print("\n❌ Request timeout")
+        return
+
+    except Exception as e:
+        print(f"\n❌ Network error: {e}")
+        return
+
+    # =====================================
+    # PARSE RESPONSE
+    # =====================================
+
+    try:
+        response_json = response.json()
+
+    except Exception:
         response_json = None
 
-    # -------------------------------------
+    # =====================================
+    # DEBUG RESPONSE
+    # =====================================
+
+    print_response(response, response_json)
+
+    # =====================================
     # SAVE COOKIES
-    # -------------------------------------
+    # =====================================
 
     new_cookies = response.cookies.get_dict()
 
@@ -176,21 +217,44 @@ def send_request_from_file(request_file):
         print("\n🍪 NEW COOKIES:")
         print(json.dumps(new_cookies, indent=4))
 
-        cookies.update(new_cookies)
+        # remove empty cookies
+        for key, value in list(new_cookies.items()):
 
-        save_cookies(cookies)
+            if value == "":
+                cookies.pop(key, None)
 
-        print("💾 Cookies saved → mini_postman_cookies.json")
+            else:
+                cookies[key] = value
 
-    # -------------------------------------
+        if cookies:
+            save_cookies(cookies)
+            print("💾 Cookies saved")
+
+        else:
+            clear_cookies()
+            print("🗑 Cookies cleared")
+
+    # =====================================
     # SAVE ACCESS TOKEN
-    # -------------------------------------
+    # =====================================
 
     if response_json and "accessToken" in response_json:
 
         save_token(response_json["accessToken"])
 
-        print("🔐 Access token saved → mini_postman_token.json")
+        print("🔐 Access token saved")
+
+    # =====================================
+    # AUTO CLEAR TOKEN ON LOGOUT
+    # =====================================
+
+    if url.endswith("/logout") and response.status_code in [200, 204]:
+
+        clear_token()
+        clear_cookies()
+
+        print("🚪 Logged out")
+        print("🗑 Tokens and cookies removed")
 
 
 # =========================================
@@ -200,8 +264,10 @@ def send_request_from_file(request_file):
 if __name__ == "__main__":
 
     if len(sys.argv) != 2:
+
         print("\nUsage:")
         print("python3 mini_postman.py <request.json>\n")
+
         sys.exit(1)
 
     send_request_from_file(sys.argv[1])
