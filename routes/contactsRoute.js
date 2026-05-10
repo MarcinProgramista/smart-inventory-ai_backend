@@ -4,6 +4,7 @@ import {
   getAllContacts,
   updateContact,
   deleteContact,
+  getContact,
 } from "../controllers/contactsController.js";
 import verifyJWT from "../middleware/verifyJWT.js";
 
@@ -13,4 +14,5 @@ router.get("/", verifyJWT, getAllContacts);
 router.post("/", verifyJWT, addContact);
 router.patch("/:id", verifyJWT, updateContact);
 router.delete("/:id", verifyJWT, deleteContact);
+router.get("/:id", verifyJWT, getContact);
 export default router;

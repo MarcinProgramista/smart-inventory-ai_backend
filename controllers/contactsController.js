@@ -144,3 +144,27 @@ export const deleteContact = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * get single contact
+ */
+export const getContact = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  try {
+    const result = await db.query(
+      `
+        SELECT * FROM contacts
+        WHERE id = $1 AND user_id = $2
+    `,
+      [id, userId],
+    );
+    if (!result.rows.length) {
+      return req.status(404).json({ error: "Contact not found" });
+    }
+    return res.json(result.rows[0]);
+  } catch (error) {
+    console.log("getContactById error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
