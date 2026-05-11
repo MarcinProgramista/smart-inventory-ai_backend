@@ -15,6 +15,7 @@ import usersRoute from "./routes/usersRoute.js";
 import loginRoute from "./routes/authRoute.js";
 import categoriesRoute from "./routes/categoriesRoute.js";
 import contactsRoute from "./routes/contactsRoute.js";
+import supplierRoute from "./routes/suppliersRoute.js";
 
 dotenv.config();
 const app = express();
@@ -75,8 +76,8 @@ app.use("/api/users", usersRoute);
 app.use("/api/auth", loginRoute);
 
 app.use("/api/categories", categoriesRoute);
-
 app.use("/api/contacts", contactsRoute);
+app.use("/api/suppliers", supplierRoute);
 
 app.use("/api/suppliers-default", suppliersDefault);
 app.use("/api/categories-default", categoriesDefault);
