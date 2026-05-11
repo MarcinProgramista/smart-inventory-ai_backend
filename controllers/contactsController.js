@@ -168,3 +168,175 @@ export const getContact = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * SEARCH CONTACTS
+ */
+export const searchContactsAdvanced = async (req, res) => {
+  const userId = req.user.id;
+
+  const {
+    q = "",
+    role,
+    hasPhone,
+    hasEmail,
+    sort = "last_name",
+    order = "asc",
+    page = 1,
+    limit = 20,
+  } = req.query;
+
+  // =====================================
+  // SORT VALIDATION
+  // =====================================
+
+  const allowedSort = [
+    "first_name",
+    "last_name",
+    "email",
+    "role",
+    "created_at",
+  ];
+
+  const sortBy = allowedSort.includes(sort) ? sort : "last_name";
+
+  const orderBy = order.toLowerCase() === "desc" ? "DESC" : "ASC";
+
+  // =====================================
+  // PAGINATION
+  // =====================================
+
+  const currentPage = Number(page);
+  const pageLimit = Number(limit);
+
+  const offset = (currentPage - 1) * pageLimit;
+
+  // =====================================
+  // DYNAMIC QUERY
+  // =====================================
+
+  const values = [userId];
+
+  let where = `WHERE user_id = $1`;
+
+  // =====================================
+  // SEARCH
+  // =====================================
+
+  if (q.trim()) {
+    values.push(`%${q}%`);
+
+    where += `
+      AND (
+        first_name ILIKE $${values.length}
+        OR last_name ILIKE $${values.length}
+        OR email ILIKE $${values.length}
+        OR role ILIKE $${values.length}
+        OR mobile_phone ILIKE $${values.length}
+      )
+    `;
+  }
+
+  // =====================================
+  // FILTER ROLE
+  // =====================================
+
+  if (role) {
+    values.push(role);
+
+    where += `
+      AND role = $${values.length}
+    `;
+  }
+
+  // =====================================
+  // FILTER PHONE
+  // =====================================
+
+  if (hasPhone === "yes") {
+    where += `
+      AND mobile_phone IS NOT NULL
+      AND mobile_phone <> ''
+    `;
+  }
+
+  if (hasPhone === "no") {
+    where += `
+      AND (
+        mobile_phone IS NULL
+        OR mobile_phone = ''
+      )
+    `;
+  }
+
+  // =====================================
+  // FILTER EMAIL
+  // =====================================
+
+  if (hasEmail === "yes") {
+    where += `
+      AND email IS NOT NULL
+      AND email <> ''
+    `;
+  }
+
+  if (hasEmail === "no") {
+    where += `
+      AND (
+        email IS NULL
+        OR email = ''
+      )
+    `;
+  }
+
+  try {
+    // =====================================
+    // DATA QUERY
+    // =====================================
+
+    const dataQuery = `
+      SELECT *
+      FROM contacts
+      ${where}
+      ORDER BY ${sortBy} ${orderBy}
+      LIMIT $${values.length + 1}
+      OFFSET $${values.length + 2}
+    `;
+
+    // =====================================
+    // COUNT QUERY
+    // =====================================
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM contacts
+      ${where}
+    `;
+
+    // =====================================
+    // EXECUTE QUERIES
+    // =====================================
+
+    const [dataResult, countResult] = await Promise.all([
+      db.query(dataQuery, [...values, pageLimit, offset]),
+      db.query(countQuery, values),
+    ]);
+
+    // =====================================
+    // RESPONSE
+    // =====================================
+
+    return res.json({
+      page: currentPage,
+      limit: pageLimit,
+      total: Number(countResult.rows[0].total),
+      items: dataResult.rows,
+    });
+  } catch (error) {
+    console.error("searchContactsAdvanced error:", error);
+
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+};
