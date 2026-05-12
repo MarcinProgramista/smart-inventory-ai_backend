@@ -113,3 +113,29 @@ export const updateSupplier = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * delete supplier
+ */
+export const deleteSupplier = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  if (!Number.isInteger(Number(id))) {
+    return res.status(400).json({
+      error: "Invalid supplier id ",
+    });
+  }
+
+  try {
+    const result = await db.query(
+      "DELETE FROM suppliers WHERE id = $1 AND user_id = $2 RETURNING *",
+      [id, userId],
+    );
+    if (result.rowCount === 0)
+      return res.status(404).json({ error: "Supplier not found" });
+    res.json({ success: true, deleted: result.rows[0] });
+  } catch (error) {
+    console.error("deleteSupplier error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
