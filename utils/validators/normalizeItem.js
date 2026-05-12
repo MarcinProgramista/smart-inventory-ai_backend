@@ -19,8 +19,8 @@ export function normalizeItem(data) {
         ? Number(data.supplier_id)
         : undefined,
     price:
-      data.price !== undefined && data.supplier_id !== ""
-        ? Number(data.supplier_id)
+      data.price !== undefined && data.price !== ""
+        ? Number(data.price)
         : undefined,
     description:
       typeof data.description === "string" && data.description.trim() !== ""
