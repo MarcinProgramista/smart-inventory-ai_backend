@@ -151,3 +151,87 @@ export const deleteItem = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * update item
+ */
+export const updateItem = async (req, res) => {
+  const userId = Number(req.user.id);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({
+      error: "user_id required",
+    });
+  }
+
+  const { id } = req.params;
+  const payload = normalizeItem(req.body);
+  payload.quantity = Number(payload.quantity);
+  payload.min_quantity = Number(payload.min_quantity);
+  payload.price = Number(payload.price);
+
+  const errors = validateItem(payload, { isUpdate: true });
+  if (errors.length > 0) return res.status(400).json({ errors });
+
+  try {
+    const result = await db.query(
+      `
+        UPDATE items
+        SET
+            name = $1,
+            quantity = $2,
+            min_quantity = $3,
+            supplier_id = $4,
+            price = $5,
+            description = $6,
+            category_id = $7
+       WHERE id = $8
+AND user_id = $9
+RETURNING *;
+        `,
+      [
+        payload.name.trim(),
+        payload.quantity,
+        payload.min_quantity,
+        payload.supplier_id,
+        payload.price,
+        payload.description,
+        payload.category_id,
+        id,
+        userId,
+      ],
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    //--- POBIERAMY DANE Z JOINAMI----
+    const fullData = await db.query(
+      `
+        SELECT 
+            i.*,
+            s.name AS supplier_name,
+            c.name AS category_name
+        FROM items i
+        LEFT JOIN suppliers s ON s.id = i.supplier_id
+        LEFT JOIN categories c ON c.id = i.category_id
+        WHERE i.id = $1
+        `,
+      [id],
+    );
+    return res.json({
+      updated: true,
+      item: fullData.rows[0],
+      message: "Item updated successfully",
+    });
+  } catch (error) {
+    console.error("updateItem error:", error);
+    //Obsługa konfliktu unikalnej nazwy
+    if (error.code === "23505") {
+      return res
+        .status(400)
+        .json({ errors: { name: "Item with this name already exists" } });
+    }
+    return res.status(500).json({ error: error.message });
+  }
+};
