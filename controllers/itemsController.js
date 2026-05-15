@@ -235,3 +235,94 @@ RETURNING *;
     return res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * search items(advanced)
+ */
+export const searchItemsAdvanced = async (req, res) => {
+  const userId = Number(req.user.id);
+  const {
+    q = "",
+    category_id = "",
+    supplier_id = "",
+    stock,
+    sort = "name",
+    order = "asc",
+    page = 1,
+    limit = 20,
+  } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+  const sortMap = {
+    name: "i.name",
+    quantity: "i.quantity",
+    min: "i.min_quantity",
+    price: "i.price",
+    created_at: "i.created_at",
+    category: "c.name",
+    supplier: "s.name",
+    status: "stock_status",
+  };
+  const sortBy = sortMap[sort] ?? "i.name";
+  const sortOrder = order === "desc" ? "DESC" : "ASC";
+  const values = [userId];
+
+  let where = "WHERE i.user_id = $1";
+  if (q.trim()) {
+    values.push(`%${q}%`);
+    where += `
+    AND (LOWER(i.name) LIKE LOWER($${values.length}) OR LOWER(i.description) LIKE LOWER($${values.length}))
+    `;
+  }
+  if (category_id) {
+    values.push(Number(category_id));
+    where += ` AND i.category_id = $${values.length}`;
+  }
+  if (stock === "out") {
+    where += ` AND i.quantity = 0`;
+  }
+  if (stock === "na") {
+    where += ` AND i.quantity > 0 AND i.min_quantity = 0`;
+  }
+  if (stock === "low") {
+    where += ` AND i.quantity > 0 AND i.min_quantity > 0 AND i.quantity <= i.min_quantity`;
+  }
+  if (stock === "ok") {
+    where += ` AND i.min_quantity > 0 AND i.quantity > i.min_quantity`;
+  }
+  if (supplier_id) {
+    values.push(Number(supplier_id));
+    where += ` AND i.supplier_id = $${values.length}`;
+  }
+  try {
+    const dataQuery = `
+    SELECT 
+    i.*,
+    s.name AS supplier_name,
+    c.name AS category_name,
+    CASE
+    WHEN i.quantity = 0 THEN 'out'
+    WHEN i.min_quantity = 0 THEN 'na'
+    WHEN i.quantity <= i.min_quantity THEN 'low'
+    ELSE 'ok'
+    END AS stock_status
+    FROM items i
+    LEFT JOIN suppliers s ON s.id = i.supplier_id
+    LEFT JOIN categories c ON c.id = i.category_id
+    ${where} ORDER BY ${sortBy} ${sortOrder} LIMIT ${Number(limit)} OFFSET ${offset}
+    `;
+    const countQuery = `SELECT COUNT(*) AS total FROM items i ${where}`;
+    const [dataResult, countResult] = await Promise.all([
+      db.query(dataQuery, values),
+      db.query(countQuery, values),
+    ]);
+    return res.json({
+      page: Number(page),
+      limit: Number(limit),
+      total: Number(countResult.rows[0].total),
+      items: dataResult.rows,
+    });
+  } catch (error) {
+    console.error("searchItemsAdvanced error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
