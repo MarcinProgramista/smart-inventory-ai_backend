@@ -139,3 +139,148 @@ export const deleteSupplier = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const searchSuppliersAdvanced = async (req, res) => {
+  const userId = req.user.id;
+
+  const {
+    q = "",
+    country,
+    city,
+    sort = "name",
+    order = "asc",
+    page = 1,
+    limit = 20,
+  } = req.query;
+
+  // =====================================
+  // SORT VALIDATION
+  // =====================================
+
+  const allowedSort = ["name", "city", "country", "created_at"];
+
+  const sortBy = allowedSort.includes(sort) ? sort : "name";
+
+  const orderBy = order.toLowerCase() === "desc" ? "DESC" : "ASC";
+
+  // =====================================
+  // PAGINATION
+  // =====================================
+
+  const currentPage = Number(page);
+  const pageLimit = Number(limit);
+  const offset = (currentPage - 1) * pageLimit;
+
+  // =====================================
+  // DYNAMIC QUERY
+  // =====================================
+
+  const values = [userId];
+
+  let where = `
+    WHERE s.user_id = $1
+  `;
+
+  // =====================================
+  // SEARCH
+  // =====================================
+
+  if (q.trim()) {
+    values.push(`%${q}%`);
+
+    where += `
+      AND (
+        s.name ILIKE $${values.length}
+        OR s.city ILIKE $${values.length}
+        OR s.street ILIKE $${values.length}
+        OR s.postal_code ILIKE $${values.length}
+        OR c.first_name ILIKE $${values.length}
+        OR c.last_name ILIKE $${values.length}
+        OR c.email ILIKE $${values.length}
+      )
+    `;
+  }
+
+  // =====================================
+  // FILTER COUNTRY
+  // =====================================
+
+  if (country) {
+    values.push(country);
+
+    where += `
+      AND s.country = $${values.length}
+    `;
+  }
+
+  // =====================================
+  // FILTER CITY
+  // =====================================
+
+  if (city) {
+    values.push(`%${city}%`);
+
+    where += `
+      AND s.city ILIKE $${values.length}
+    `;
+  }
+
+  try {
+    // =====================================
+    // DATA QUERY
+    // =====================================
+
+    const dataQuery = `
+      SELECT
+        s.*,
+        c.first_name,
+        c.last_name,
+        c.email
+      FROM suppliers s
+      LEFT JOIN contacts c
+        ON c.id = s.contact_id
+      ${where}
+      ORDER BY s.${sortBy} ${orderBy}
+      LIMIT $${values.length + 1}
+      OFFSET $${values.length + 2}
+    `;
+
+    // =====================================
+    // COUNT QUERY
+    // =====================================
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM suppliers s
+      LEFT JOIN contacts c
+        ON c.id = s.contact_id
+      ${where}
+    `;
+
+    // =====================================
+    // EXECUTE
+    // =====================================
+
+    const [dataResult, countResult] = await Promise.all([
+      db.query(dataQuery, [...values, pageLimit, offset]),
+      db.query(countQuery, values),
+    ]);
+
+    // =====================================
+    // RESPONSE
+    // =====================================
+
+    return res.json({
+      page: currentPage,
+      limit: pageLimit,
+      total: Number(countResult.rows[0].total),
+      items: dataResult.rows,
+    });
+  } catch (error) {
+    console.error("searchSuppliersAdvanced error:", error);
+
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+};
