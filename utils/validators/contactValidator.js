@@ -43,9 +43,15 @@ export function validateContact(data, options = {}) {
    * mobile_phone
    * walidacja : tylko cyfry , 9-15  znaków
    */
-  if (mobile_phone !== undefined && mobile_phone !== null) {
+  if (
+    mobile_phone !== undefined &&
+    mobile_phone !== null &&
+    String(mobile_phone).trim() !== ""
+  ) {
     const phone = String(mobile_phone).trim();
+
     const phoneRegex = /^[0-9]{9,15}$/;
+
     if (!phoneRegex.test(phone)) {
       errors.push("Invalid phone number format (expected 9-15 digits)");
     }
