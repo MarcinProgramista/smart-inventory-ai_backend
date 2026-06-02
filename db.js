@@ -12,7 +12,7 @@ export const db = new pg.Pool({
 });
 
 // 🔌 Connect to DB
-db.connect()
+db.query("SELECT 1")
   .then(() => console.log("📦 Successfully connected to database"))
   .catch((err) => {
     console.error("❌ Database connection error:", err);

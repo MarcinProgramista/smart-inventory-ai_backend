@@ -4,6 +4,7 @@ import { jwtTokens } from "../utils/jwt-helpers.js";
 import crypto from "crypto";
 
 const handleLogin = async (req, res) => {
+  console.log("LOGIN START");
   const { email, password } = req.body;
 
   // 🔍 Validation

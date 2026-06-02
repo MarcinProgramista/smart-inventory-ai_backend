@@ -156,7 +156,8 @@ export const deleteSupplier = async (req, res) => {
 
 export const searchSuppliersAdvanced = async (req, res) => {
   const userId = req.user.id;
-
+  console.log("SEARCH SUPPLIERS START");
+  console.log(req.user);
   const {
     q = "",
     country,
