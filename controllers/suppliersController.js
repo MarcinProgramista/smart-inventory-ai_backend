@@ -156,8 +156,7 @@ export const deleteSupplier = async (req, res) => {
 
 export const searchSuppliersAdvanced = async (req, res) => {
   const userId = req.user.id;
-  console.log("SEARCH SUPPLIERS START");
-  console.log(req.user);
+
   const {
     q = "",
     country,
@@ -250,7 +249,8 @@ export const searchSuppliersAdvanced = async (req, res) => {
         s.*,
         c.first_name,
         c.last_name,
-        c.email
+        c.email,
+        c.mobile_phone
       FROM suppliers s
       LEFT JOIN contacts c
         ON c.id = s.contact_id
