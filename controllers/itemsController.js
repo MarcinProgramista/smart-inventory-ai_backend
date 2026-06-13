@@ -269,9 +269,17 @@ export const searchItemsAdvanced = async (req, res) => {
   let where = "WHERE i.user_id = $1";
   if (q.trim()) {
     values.push(`%${q}%`);
+
     where += `
-    AND (LOWER(i.name) LIKE LOWER($${values.length}) OR LOWER(i.description) LIKE LOWER($${values.length}))
-    `;
+    AND (
+      LOWER(i.name) LIKE LOWER($${values.length})
+      OR LOWER(i.description) LIKE LOWER($${values.length})
+      OR LOWER(s.name) LIKE LOWER($${values.length})
+      OR LOWER(c.name) LIKE LOWER($${values.length})
+      OR CAST(i.quantity AS TEXT) LIKE $${values.length}
+      OR CAST(i.price AS TEXT) LIKE $${values.length}
+    )
+  `;
   }
   if (category_id) {
     values.push(Number(category_id));
@@ -310,11 +318,18 @@ export const searchItemsAdvanced = async (req, res) => {
     LEFT JOIN categories c ON c.id = i.category_id
     ${where} ORDER BY ${sortBy} ${sortOrder} LIMIT ${Number(limit)} OFFSET ${offset}
     `;
-    const countQuery = `SELECT COUNT(*) AS total FROM items i ${where}`;
+    const countQuery = `
+SELECT COUNT(*) AS total
+FROM items i
+LEFT JOIN suppliers s ON s.id = i.supplier_id
+LEFT JOIN categories c ON c.id = i.category_id
+${where}
+`;
     const [dataResult, countResult] = await Promise.all([
       db.query(dataQuery, values),
       db.query(countQuery, values),
     ]);
+
     return res.json({
       page: Number(page),
       limit: Number(limit),
